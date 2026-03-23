@@ -1,0 +1,13 @@
+from pydantic import BaseModel
+
+class Intent(BaseModel):
+    name: str
+    action: str
+    notes: str
+
+
+class Meeting(BaseModel):
+    summary: str         # In the future we can make it a sales rep, so we can read the content of fireflies ai and send a follow up 
+    start_time: str
+    attendee_name: str
+    attendee_email: str
