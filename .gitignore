@@ -6,6 +6,14 @@ dist/
 wheels/
 *.egg-info
 
+# Google auth 
+credentials.json
+credential.json
+token.json
+src/credentials.json
+src/credential.json
+
+
 # Envs 
 .env
 
