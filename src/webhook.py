@@ -1,15 +1,8 @@
 import httpx
-import os
-from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from src.intent import extract_intent
-
-load_dotenv()
-LINQ_API_KEY = os.getenv("LINQ_API_KEY")
-
-if not LINQ_API_KEY:
-    raise RuntimeError("LINQ_API_KEY not found in .env")
-
+from src.config import LINQ_API_KEY
+from src.agent import handle_message, CONFIRMATION_PHRASES
 
 app = FastAPI()
 
@@ -18,44 +11,36 @@ async def receive_message(request: Request):
     body = await request.json()
     print("PAYLOAD:", body)
 
-    # Echo it back to yourself for now
-
-
-    # Stop the loop 
     if body["data"]["is_from_me"]:
         return {"status": "ok"}
 
-    message_text = body["data"]["message"]["parts"][0]["value"]
-    print(f"Message from user: {message_text}")
+    message_text = body["data"]["message"]["parts"][0]["value"].strip()
     chat_id = body["data"]["chat_id"]
+    print(f"Message from user: {message_text}")
 
-    try: 
-        intent = extract_intent(message_text)
-        print("INTENT:", intent)
-        reply = f"I understood: {intent}"
-    except RuntimeError: 
-        reply = "Sorry I could not understand. Try somehting like: 'Follow up with Juan, moving to the next round'"
+    try:
+        # Check for confirmation FIRST before calling Gemini
+        if any(phrase in message_text.lower() for phrase in CONFIRMATION_PHRASES):
+            reply = await handle_message(chat_id, None, message_text)
+        else:
+            intent = extract_intent(message_text)
+            print("INTENT:", intent)
 
+            if intent.name == "unknown":
+                reply = "I couldn't quite catch who you want to follow up with. Could you provide a name?"
+            else:
+                reply = await handle_message(chat_id, intent, message_text)
 
+    except Exception as e:
+        print(f"Workflow Error: {e}")
+        reply = "Something went wrong. Please try again."
 
-
-    if not chat_id:
-        print("chatId not found in payload")
-        return {"status": "ok"}
-
-    # Reply back
     url = f"https://api.linqapp.com/api/partner/v3/chats/{chat_id}/messages"
     payload = {
         "message": {
-            "parts": [
-                {
-                    "type": "text",
-                    "value": reply
-                }
-            ]
+            "parts": [{"type": "text", "value": reply}]
         }
     }
-
     headers = {
         "Authorization": f"Bearer {LINQ_API_KEY}",
         "Content-Type": "application/json"
