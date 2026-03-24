@@ -195,6 +195,6 @@ See `pyproject.toml` for pinned versions. Notable packages: **FastAPI**, **Uvico
 
 ---
 
-## License / ownership
+## License
 
-Add your license or internal ownership here if applicable.
+This project is licensed under the terms of the [MIT license](LICENSE).
