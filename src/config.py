@@ -14,11 +14,13 @@ if not LINQ_API_KEY:
     raise RuntimeError("LINQ_API_KEY not found in .env")
 if not GEMINI_API_KEY:
     raise RuntimeError("GEMINI_API_KEY not found in .env")
+if not LINQ_PHONE_NUMBER:
+    raise RuntimeError("LINQ_NUM is not defined in .env")
 
 # Clients — initialized once, imported everywhere
 gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Agent behavior config
-GEMINI_MODEL = "gemini-2.0-flash-001"
+GEMINI_MODEL = "gemini-2.5-flash"
 CALENDAR_LOOKBACK_DAYS = 7
 FUZZY_MATCH_THRESHOLD = 70
