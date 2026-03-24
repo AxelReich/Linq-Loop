@@ -1,20 +1,8 @@
 import json
-import os
-from src.config import GEMINI_API_KEY
-from google import genai
-from pydantic import BaseModel
-
-if not GEMINI_API_KEY:
-    raise RuntimeError("GEMINI_API_KEY not found in .env")
-
-client = genai.Client(api_key=GEMINI_API_KEY)
-print("GEMINI KEY IN USE:", GEMINI_API_KEY[:8])
+from src.models import Intent
+from src.config import gemini_client, GEMINI_MODEL
 
 
-class Intent(BaseModel):
-    name: str
-    action: str
-    notes: str
 
 def extract_intent(message_text: str)-> Intent:
     AGENT_ACTION = f"""
@@ -34,15 +22,19 @@ def extract_intent(message_text: str)-> Intent:
     """
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
+        # Use 'gemini_client' and 'GEMINI_MODEL' from your config
+        response = gemini_client.models.generate_content(
+            model=GEMINI_MODEL,
             contents=AGENT_ACTION
         )
+        
         if not response.text:
             raise ValueError("Gemini returned empty response")
             
+        # Clean up the string to ensure it's just JSON
         raw = response.text.strip().replace("```json", "").replace("```", "")
         data = json.loads(raw)
+        
         return Intent(**data)
 
     except Exception as e:
@@ -53,4 +45,4 @@ def extract_intent(message_text: str)-> Intent:
             print("Invalid API key")
         else:
             print(f"Gemini error: {e}")
-        return Intent(name="unknown", action="Miscelanous", notes=message_text)
+        return Intent(name="unknown", action="uknown", notes=message_text)
