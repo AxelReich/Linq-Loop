@@ -72,6 +72,90 @@ flowchart LR
 
 ---
 
+## Getting started (first-time setup)
+
+### 1) Clone and enter the project
+
+```bash
+git clone https://github.com/<your-org-or-user>/linq-meeting-followup-agent.git
+cd linq-meeting-followup-agent/linqFollowoUpagent
+```
+
+### 2) Install dependencies
+
+```bash
+uv sync
+```
+
+### 3) Create `.env`
+
+Create a file named `.env` in the repository root:
+
+```bash
+cat > .env <<'EOF'
+LINQ_API_KEY=your_linq_partner_api_key
+LINQ_PHONE_NUMBER=your_linq_number
+GEMINI_API_KEY=your_gemini_api_key
+EOF
+```
+
+### 4) Configure Google OAuth (Calendar + Gmail)
+
+1. In Google Cloud Console, create/select a project.
+2. Enable:
+   - Google Calendar API
+   - Gmail API
+3. Configure OAuth consent screen.
+4. Create OAuth client credentials for a Desktop app.
+5. Download the JSON and place it as:
+   - `credentials.json` in the repository root.
+
+### 5) Start the API locally
+
+```bash
+uv run uvicorn src.webhook:app --host 0.0.0.0 --port 8000
+```
+
+### 6) Expose your local webhook URL
+
+If running locally, expose port `8000` publicly (for example with Cloudflare Tunnel, ngrok, or your own reverse proxy), then set Linq webhook URL to:
+
+`https://<public-url>/webhook`
+
+### 7) Connect Linq to your server
+
+In your Linq Partner configuration:
+
+- Set the webhook URL to your public `/webhook` endpoint.
+- Confirm requests are being delivered (you should see `PAYLOAD:` logs in your terminal).
+
+### 8) Complete first-run Google authentication
+
+On the first workflow that touches Google APIs, the app opens a browser for OAuth consent. After successful login:
+
+- `token.json` is created in the repository root.
+- Future runs reuse and refresh this token automatically.
+
+### 9) End-to-end smoke test
+
+Send an iMessage routed through Linq:
+
+`Follow up with Alex, mention strong communication and quick turnaround.`
+
+Expected result:
+
+1. Bot returns a draft with `To`, `Subject`, and email body.
+2. Reply with `send it`.
+3. Bot confirms send and email appears in Gmail sent mail.
+
+### 10) Development notes
+
+- `pending_drafts` are stored in memory only; restarting the server clears pending confirmations.
+- Run the server from the repo root so relative `credentials.json` / `token.json` paths resolve correctly.
+- `main.py` is not the runtime entrypoint; use `src.webhook:app`.
+
+---
+
 ## Configuration
 
 Create a `.env` in the project root (loaded by `src/config.py`):
